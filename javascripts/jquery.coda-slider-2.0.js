@@ -50,8 +50,9 @@ $.fn.codaSlider = function(settings) {
 			slider.after('<div class="coda-nav-right" id="coda-nav-right-' + sliderCount + '"><a href="#">' + settings.dynamicArrowRightText + '</a></div>');
 		};
 		
-		var panelWidth = slider.find(".panel").width();
-		var panelCount = slider.find(".panel").size();
+		var panels = slider.find(".panel");
+		var panelWidth = panels.width();
+		var panelCount = panels.size();
 		var panelContainerWidth = panelWidth*panelCount;
 		var navClicks = 0; // Used if autoSlideStopWhenClicked = true
 		
@@ -59,11 +60,11 @@ $.fn.codaSlider = function(settings) {
 		$('.panel', slider).wrapAll('<div class="panel-container"></div>');
 		// Specify the width of the container div (wide enough for all panels to be lined up end-to-end)
 		$(".panel-container", slider).css({ width: panelContainerWidth });
-		
+
 		// Specify the current panel.
 		// If the loaded URL has a hash (cross-linking), we're going to use that hash to give the slider a specific starting position...
-		if (settings.crossLinking && location.hash && parseInt(location.hash.slice(1)) <= panelCount) {
-			var currentPanel = parseInt(location.hash.slice(1));
+		if (settings.crossLinking && location.hash) {
+			var currentPanel = getHashPanel(location.hash.slice(1));
 			var offset = - (panelWidth*(currentPanel - 1));
 			$('.panel-container', slider).css({ marginLeft: offset });
 		// If that's not the case, check to see if we're supposed to load a panel other than Panel 1 initially...
@@ -91,7 +92,7 @@ $.fn.codaSlider = function(settings) {
 				slider.siblings('.coda-nav').find('a.current').removeClass('current').parent().prev().find('a').addClass('current');
 			};
 			$('.panel-container', slider).animate({ marginLeft: offset }, settings.slideEaseDuration, settings.slideEaseFunction);
-			if (settings.crossLinking) { location.hash = currentPanel }; // Change the URL hash (cross-linking)
+			if (settings.crossLinking) { location.hash = getPanelHash() }; // Change the URL hash (cross-linking)
 			return false;
 		});
 			
@@ -110,7 +111,7 @@ $.fn.codaSlider = function(settings) {
 				slider.siblings('.coda-nav').find('a.current').removeClass('current').parent().next().find('a').addClass('current');
 			};
 			$('.panel-container', slider).animate({ marginLeft: offset }, settings.slideEaseDuration, settings.slideEaseFunction);
-			if (settings.crossLinking) { location.hash = currentPanel }; // Change the URL hash (cross-linking)
+			if (settings.crossLinking) { location.hash = getPanelHash() }; // Change the URL hash (cross-linking)
 			return false;
 		});
 		
@@ -128,7 +129,7 @@ $.fn.codaSlider = function(settings) {
 			ul = $('#coda-nav-' + sliderCount + ' ul');
 			// Create the nav items
 			$('.panel', slider).each(function(n) {
-				ul.append('<li class="tab' + (n+1) + '"><a href="#' + (n+1) + '">' + $(this).find(settings.panelTitleSelector).text() + '</a></li>');												
+				ul.append('<li class="tab' + (n+1) + '"><a href="#' + getPanelHash(n+1) + '">' + $(this).find(settings.panelTitleSelector).text() + '</a></li>');												
 			});
 			navContainerWidth = slider.width() + slider.siblings('.coda-nav-left').width() + slider.siblings('.coda-nav-right').width();
 			ul.parent().css({ width: navContainerWidth });
@@ -162,7 +163,7 @@ $.fn.codaSlider = function(settings) {
 			if (sliderCount == parseInt($(this).attr("rel").slice(12))) {
 				$(this).bind("click", function() {
 					navClicks++;
-					targetPanel = parseInt($(this).attr("href").slice(1));
+					targetPanel = getHashPanel($(this).attr("href").slice(1));
 					offset = - (panelWidth*(targetPanel - 1));
 					alterPanelHeight(targetPanel - 1);
 					currentPanel = targetPanel;
@@ -175,17 +176,9 @@ $.fn.codaSlider = function(settings) {
 			};
 		});
 			
-		// Specify which tab is initially set to "current". Depends on if the loaded URL had a hash or not (cross-linking).
-		if (settings.crossLinking && location.hash && parseInt(location.hash.slice(1)) <= panelCount) {
-			$("#coda-nav-" + sliderCount + " a:eq(" + (location.hash.slice(1) - 1) + ")").addClass("current");
-		// If there's no cross-linking, check to see if we're supposed to load a panel other than Panel 1 initially...
-		} else if (settings.firstPanelToLoad != 1 && settings.firstPanelToLoad <= panelCount) {
-			$("#coda-nav-" + sliderCount + " a:eq(" + (settings.firstPanelToLoad - 1) + ")").addClass("current");
-		// Otherwise we must be loading Panel 1, so make the first tab the current one.
-		} else {
-			$("#coda-nav-" + sliderCount + " a:eq(0)").addClass("current");
-		};
-		
+		// Specify which tab is initially set to "current"
+		$("#coda-nav-" + sliderCount + " a:eq(" + (currentPanel - 1) + ")").addClass("current");
+
 		// Set the height of the first panel
 		if (settings.autoHeight) {
 			panelHeight = $('.panel:eq(' + (currentPanel - 1) + ')', slider).height();
@@ -198,6 +191,24 @@ $.fn.codaSlider = function(settings) {
 				setTimeout(autoSlide,settings.autoSlideInterval);
 			});
 		};
+		
+		// Return panel number for specified hash - lookup panel based on numeric value or an id attribute
+		function getHashPanel(panelHash) {
+			// Check for a numeric value, we can use that directly
+			if (parseInt(panelHash) <= panelCount) {
+				return parseInt(panelHash);
+			// Non-numeric, so lookup the panel with corresponding id
+			} else {
+				var panelElem = panels.filter('#' + panelHash);
+				return panelElem.length ? panels.index(panelElem) + 1 : 1;
+			}
+		}
+
+		// Return hash for current/specified panel - either id attribute of panel or panel number if no id is set.
+		function getPanelHash(panelNumber) {
+			panelNumber = panelNumber || currentPanel;
+			return panels[panelNumber - 1].id || panelNumber;
+		}
 		
 		function alterPanelHeight(x) {
 			if (settings.autoHeight) {
