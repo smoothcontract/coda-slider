@@ -60,6 +60,12 @@ $.fn.codaSlider = function(settings) {
 		$('.panel', slider).wrapAll('<div class="panel-container"></div>');
 		// Specify the width of the container div (wide enough for all panels to be lined up end-to-end)
 		$(".panel-container", slider).css({ width: panelContainerWidth });
+		
+		// Cache and remove the panel id's so we can suppress default browser scroll behaviour
+		var panelCache = $.map(panels, function(e, i) {
+			var id = e.id; e.id = '';
+			return id || i + 1 + ''; // force storage as string
+		});
 
 		// Specify the current panel.
 		// If the loaded URL has a hash (cross-linking), we're going to use that hash to give the slider a specific starting position...
@@ -92,8 +98,7 @@ $.fn.codaSlider = function(settings) {
 				slider.siblings('.coda-nav').find('a.current').removeClass('current').parent().prev().find('a').addClass('current');
 			};
 			$('.panel-container', slider).animate({ marginLeft: offset }, settings.slideEaseDuration, settings.slideEaseFunction);
-			if (settings.crossLinking) { location.hash = getPanelHash() }; // Change the URL hash (cross-linking)
-			return false;
+			return updateHash();
 		});
 			
 		// Right arrow click
@@ -111,8 +116,7 @@ $.fn.codaSlider = function(settings) {
 				slider.siblings('.coda-nav').find('a.current').removeClass('current').parent().next().find('a').addClass('current');
 			};
 			$('.panel-container', slider).animate({ marginLeft: offset }, settings.slideEaseDuration, settings.slideEaseFunction);
-			if (settings.crossLinking) { location.hash = getPanelHash() }; // Change the URL hash (cross-linking)
-			return false;
+			return updateHash();
 		});
 		
 		// If we need a dynamic menu
@@ -153,7 +157,7 @@ $.fn.codaSlider = function(settings) {
 				alterPanelHeight(z);
 				currentPanel = z + 1;
 				$('.panel-container', slider).animate({ marginLeft: offset }, settings.slideEaseDuration, settings.slideEaseFunction);
-				if (!settings.crossLinking) { return false }; // Don't change the URL hash unless cross-linking is specified
+				return updateHash();
 			});
 		});
 		
@@ -171,7 +175,7 @@ $.fn.codaSlider = function(settings) {
 					slider.siblings('.coda-nav').find('a').removeClass('current').parents('ul').find('li:eq(' + (targetPanel - 1) + ') a').addClass('current');
 					// Slide
 					$('.panel-container', slider).animate({ marginLeft: offset }, settings.slideEaseDuration, settings.slideEaseFunction);
-					if (!settings.crossLinking) { return false }; // Don't change the URL hash unless cross-linking is specified
+					return updateHash();
 				});
 			};
 		});
@@ -192,22 +196,21 @@ $.fn.codaSlider = function(settings) {
 			});
 		};
 		
-		// Return panel number for specified hash - lookup panel based on numeric value or an id attribute
+		// Return panel number for specified hash via a cache lookup
 		function getHashPanel(panelHash) {
-			// Check for a numeric value, we can use that directly
-			if (parseInt(panelHash) <= panelCount) {
-				return parseInt(panelHash);
-			// Non-numeric, so lookup the panel with corresponding id
-			} else {
-				var panelElem = panels.filter('#' + panelHash);
-				return panelElem.length ? panels.index(panelElem) + 1 : 1;
-			}
+			var panelNum = $.inArray(panelHash + '', panelCache);
+			return panelNum < 0 ? 1 : panelNum + 1;
 		}
 
-		// Return hash for current/specified panel - either id attribute of panel or panel number if no id is set.
+		// Return cached hash for current/specified panel
 		function getPanelHash(panelNumber) {
-			panelNumber = panelNumber || currentPanel;
-			return panels[panelNumber - 1].id || panelNumber;
+			return panelCache[(panelNumber || currentPanel) - 1];
+		}
+		
+		// Update URL hash for current panel
+		function updateHash() {
+			if (settings.crossLinking) { location.hash = getPanelHash() }; // Change the URL hash (cross-linking)
+			return false;
 		}
 		
 		function alterPanelHeight(x) {
