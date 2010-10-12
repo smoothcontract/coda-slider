@@ -168,7 +168,7 @@ $.fn.codaSlider = function(settings) {
 			if (sliderId == $(this).attr("rel")) {
 				$(this).bind("click", function() {
 					navClicks++;
-					targetPanel = getHashPanel($(this).attr("href").slice(1));
+					targetPanel = getHashPanel($(this).attr("href").replace(/.*#/, ''));
 					offset = - (panelWidth*(targetPanel - 1));
 					alterPanelHeight(targetPanel - 1);
 					currentPanel = targetPanel;
