@@ -42,6 +42,7 @@ $.fn.codaSlider = function(settings) {
 		// alert("Testing preloader");
 		
 		var slider = $(this);
+		var sliderId = this.id;
 		
 		// If we need arrows
 		if (settings.dynamicArrows) {
@@ -164,7 +165,7 @@ $.fn.codaSlider = function(settings) {
 		// External triggers (anywhere on the page)
 		$(settings.externalTriggerSelector).each(function() {
 			// Make sure this only affects the targeted slider
-			if (sliderCount == parseInt($(this).attr("rel").slice(12))) {
+			if (sliderId == $(this).attr("rel")) {
 				$(this).bind("click", function() {
 					navClicks++;
 					targetPanel = getHashPanel($(this).attr("href").slice(1));
