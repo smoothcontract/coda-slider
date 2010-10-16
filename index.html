@@ -21,6 +21,10 @@
 		 <script type="text/javascript">
 			$().ready(function() {
 				$('#coda-slider-1').codaSlider();
+				$('a.xtrig').click(function() {
+					$('.manual-links a').removeClass('focus');
+					$(this).addClass('focus');
+				});
 			});
 		 </script>
 	<!-- End JavaScript -->
